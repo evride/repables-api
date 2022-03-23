@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-def create_access_token(data: dict):
+async def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
@@ -17,15 +17,18 @@ def create_access_token(data: dict):
 
 # validate access token
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_reset_context = CryptContext(schemes=["sha256_crypt"])
 
-def get_password_hash(password):
+async def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def verify_password(plain_password, hashed_password):
+
+
+async def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-def authenticate_user(User, username_or_email: str, password: str):
+async def authenticate_user(User, username_or_email: str, password: str):
     u = User.select().where(User.username == username_or_email, User.password == password).get()
     user = model_to_dict(u)
     user_hashed_password = get_password_hash(user.password)
