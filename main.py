@@ -1,4 +1,5 @@
 from typing import Optional
+import subprocess
 
 from fastapi import FastAPI, UploadFile, Depends, File, Form
 import peewee
@@ -9,10 +10,12 @@ from PIL import Image
 
 from playhouse.shortcuts import *
 from config import DATABASE
-from models import User, Item, ItemRevision, ItemUpload
+from models import User, Item, ItemRevision, ItemUpload, PasswordReset
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from utils import create_access_token, get_password_hash, verify_password, get_current_user
+from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+from utils import create_access_token, get_password_hash, verify_password, get_current_user, reset_password_key
+
 app = FastAPI()
 
 
@@ -39,6 +42,13 @@ class ModifyUser(BaseModel):
     email: str
     username: str
     password: str
+
+class ResetKey(BaseModel):
+    reset_key: str
+
+class ResetPasswordCreds(BaseModel):
+    email: str
+    
 
 class UserResponse(BaseModel):
     id: int
@@ -100,7 +110,26 @@ async def create_item(current_user: User = Depends(get_current_user)):
     i = ItemRevision.create( user_id=current_user.id)
     return model_to_dict(i)
 
-@app.post("/item/{item_revision_id}")
+@app.post("/item_revision/{item_revision_id}/publish")
+async def publish_item( current_user: User = Depends(get_current_user)):
+    item_revision = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
+
+    i = Item.create(user_id = current_user.id, revision_id = item_revision_id, name = item_revision.name, description = item_revision.description, instructions = item_revision.instructions, license = item_revision.license, version = item_revision.version ) #revision id needs to be included
+    return model_to_dict(i)
+# @app.post("/user")
+# async def create_user(user: ModifyUser):
+#     try:
+#         u = User.create(email = user.email, username = user.username, password = get_password_hash(user.password))
+#     except:
+#         return { "error" : "User already exist"}
+#     return model_to_dict(u)
+
+@app.delete("/item/{item_id}")
+async def delete_item(item_id: int, current_user: User = Depends(get_current_user)):
+    i = Item.select().where(Item.id == item_id).where(User.id == user_id).get()
+    return i.delete_instance()
+
+@app.post("/item_revision/{item_revision_id}")
 async def update_item(item_revision_id : int, item: ModifyItem, current_user: User = Depends(get_current_user)):
     i = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
     if(i):
@@ -168,6 +197,9 @@ async def create_file(revision_id : str, file: UploadFile = File(...), current_u
                 with Image.open(file_location) as im:
                     im.thumbnail((128, 128))
                     im.save(file_location + '_thumbnail.png', 'PNG')
+            if (file_extension.lower() == 'stl'):
+                subprocess.run('chromium --headless --screenshot http://render-model')
+
             item_upload = ItemUpload(uploader=current_user.id, revision_id = revision_id, filename = file.filename, file_location = file_location, size = size, mimetype = file.content_type, file_extension = file_extension )
             item_upload.save()
     except Exception as e:
@@ -199,4 +231,17 @@ async def login_user(creds: Login):
 
         return {'token': token, 'id': user['id'], 'username': user['username']}
     else:
-        return {"error": "Username or password is incorrect"}
+        return {'error': 'Username or password is incorrect.'}
+
+@app.post('/reset-password')
+async def create_reset_password_key(creds: ResetPasswordCreds):
+    u = User.select().where(User.email == creds.email).get()
+
+    if (u):
+        key = PasswordReset.create(user_id = u.id, reset_key = reset_password_key)
+        key.save()
+        #logic for emailing the key to the user goes here
+        return {'status' :'success'}
+    else:
+        return {'error': 'Email not found.'}
+
