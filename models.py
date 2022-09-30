@@ -96,7 +96,50 @@ class ItemUpload(Model):
     def __str__(self):
         return self.filename
 
-# class PasswordReset(Model):
-#     user = ForeignKeyField(User)
-#     reset_key = CharField(max_length=256)
-#     created_at = DateTimeField(default=datetime.now)
+class File(Model):
+    item = ForeignKeyField(Item, null = True)
+    revision = ForeignKeyField(ItemRevision, null = True)
+    name = CharField(max_length = 255)
+    downloadable = BooleanField(default=False)
+    sort_order = IntegerField()
+    render = BooleanField(default=True)
+    preview = BooleanField(default=True)
+
+    class Meta:
+            database = pg_db
+            db_table = "files"
+
+
+class Download(Model):
+    item = ForeignKeyField(Item, null=True)
+    revision = ForeignKeyField(ItemRevision, null=True)
+    file = ForeignKeyField(File, null=True)
+    user = ForeignKeyField(User, null=True)
+    created_at = DateTimeField(default=datetime.now)
+    class Meta:
+            database = pg_db
+            db_table = "downloads"
+
+
+class PasswordReset(Model):
+    user = ForeignKeyField(User)
+    reset_key = CharField(max_length=32)
+    created_at = DateTimeField(default=datetime.now)
+    class Meta:
+            database = pg_db
+            db_table = "reset_passwords"
+
+class Upload(Model):
+    user = ForeignKeyField(User)
+    revision = ForeignKeyField(ItemRevision, null=True)
+    file_location = CharField(max_length=256)
+    filename = CharField(max_length=256)
+    file_extension = CharField(max_length=10)
+    filesize = IntegerField()
+    mimetype = CharField(max_length=128)
+    hash = CharField(max_length=256)
+    remote_address = CharField(max_length=39)
+    uploaded_at = DateTimeField(default=datetime.now)
+    class Meta:
+            database = pg_db
+            db_table = "uploads"
