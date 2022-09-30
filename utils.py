@@ -17,12 +17,12 @@ async def create_access_token(data: dict):
     return encoded_jwt
 
 # validate access token
-#pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-#pwd_reset_context = CryptContext(schemes=["sha256_crypt"])
-#reset_password_key = str(pwd_reset_context.hash(str(time.time())).replace('.', '').replace('/', '').split('$')[-1])[:32]
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_reset_context = CryptContext(schemes=["sha256_crypt"])
+reset_password_key = str(pwd_reset_context.hash(str(time.time())).replace('.', '').replace('/', '').split('$')[-1])[:32]
 
-async def get_password_hash(password):
-    return pwd_context.hash(password)
+def get_password_hash(password: str):
+    return str(pwd_context.hash(password))
 
 
 

@@ -105,12 +105,12 @@ async def read_items():
     items = [model_to_dict(item) for item in items]
     return items
 
-@app.post("/item")
+@app.post("/item-revision")
 async def create_item(current_user: User = Depends(get_current_user)):
     i = ItemRevision.create( user_id=current_user.id)
     return model_to_dict(i)
 
-@app.post("/item_revision/{item_revision_id}/publish")
+@app.post("/item-revision/{item_revision_id}/publish")
 async def publish_item( current_user: User = Depends(get_current_user)):
     item_revision = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
 
@@ -129,7 +129,7 @@ async def delete_item(item_id: int, current_user: User = Depends(get_current_use
     i = Item.select().where(Item.id == item_id).where(User.id == user_id).get()
     return i.delete_instance()
 
-@app.post("/item_revision/{item_revision_id}")
+@app.post("/item-revision/{item_revision_id}")
 async def update_item(item_revision_id : int, item: ModifyItem, current_user: User = Depends(get_current_user)):
     i = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
     if(i):
@@ -224,7 +224,7 @@ async def login_user(creds: Login):
     if not user:
         return { 'error': 'Username or email does not exist.' }
     if not await verify_password(creds.password, user['password']):
-        return False
+        return { 'error': 'Password is incorrect.' }
     if user['id'] >= 1:
         token_data = {'id': user['id']}
         token = await create_access_token(token_data);
