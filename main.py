@@ -9,11 +9,12 @@ from datetime import datetime
 from PIL import Image
 
 from playhouse.shortcuts import *
-from config import DATABASE
-from models import User, Item, ItemRevision, ItemUpload, PasswordReset
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
+
+from config import DATABASE
+from models import User, Item, ItemRevision, ItemUpload, PasswordReset
 from utils import create_access_token, get_password_hash, verify_password, get_current_user, reset_password_key
 
 app = FastAPI()
@@ -111,11 +112,14 @@ async def create_item(current_user: User = Depends(get_current_user)):
     return model_to_dict(i)
 
 @app.post("/item-revision/{item_revision_id}/publish")
-async def publish_item( current_user: User = Depends(get_current_user)):
+async def publish_item( item_revision_id: int, current_user: User = Depends(get_current_user)):
     item_revision = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
-
-    i = Item.create(user_id = current_user.id, revision_id = item_revision_id, name = item_revision.name, description = item_revision.description, instructions = item_revision.instructions, license = item_revision.license, version = item_revision.version ) #revision id needs to be included
-    return model_to_dict(i)
+    existing = Item.select().where(Item.user_id == current_user.id).where(Item.revision_id == item_revision_id).get()
+    if (existing):
+        print(existing)
+    else: 
+        i = Item.create(user_id = current_user.id, revision_id = item_revision_id, name = item_revision.name, description = item_revision.description, instructions = item_revision.instructions, license = item_revision.license, version = item_revision.version ) #revision id needs to be included
+        return model_to_dict(i)
 # @app.post("/user")
 # async def create_user(user: ModifyUser):
 #     try:
