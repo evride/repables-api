@@ -1,7 +1,7 @@
 from typing import Optional
 import subprocess
 
-from fastapi import FastAPI, UploadFile, Depends, File, Form
+from fastapi import FastAPI, UploadFile, Depends, File, Form, Request
 import peewee
 import aiofiles
 import time
@@ -14,7 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from config import DATABASE
-from models import User, Item, ItemRevision, ItemUpload, PasswordReset
+from models import User, Item, ItemRevision, ItemUpload, PasswordReset, ItemView
 from utils import create_access_token, get_password_hash, verify_password, get_current_user, reset_password_key
 
 app = FastAPI()
@@ -100,11 +100,25 @@ async def read_item(item_id: int):
     item = model_to_dict(Item.select().where(Item.id == item_id).get())
     return item
 
+@app.post("/items/{item_id}/view")
+async def track_item_view(item_id: int, request: Request):
+    item = Item.select().where(Item.id == item_id).get()
+    if item:
+        ItemView.create(item_id = item_id, revision_id = item.revision_id, remote_address = request.client.host)
+        return {'success' : 'true'}
+    return {'error' : 'Not Found'}
+
 @app.get("/items/")
 async def read_items():
     items = Item.select()
     items = [model_to_dict(item) for item in items]
     return items
+@app.get('/my-endpoint')
+async def my_endpoint(request: Request):
+    ip = request.client.host
+    return request.client
+    return {'ip': ip, 'message': 'ok'}
+
 
 @app.post("/item-revision")
 async def create_item(current_user: User = Depends(get_current_user)):

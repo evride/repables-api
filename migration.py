@@ -1,3 +1,3 @@
 from models import *
 
-pg_db.create_tables([Upload])
+pg_db.create_tables([ItemView])
