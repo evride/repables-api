@@ -95,6 +95,17 @@ class ItemUpload(Model):
     def __str__(self):
         return self.filename
 
+class ItemView(Model):
+    item = ForeignKeyField(Item)
+    revision = ForeignKeyField(ItemRevision)
+    user = ForeignKeyField(User, null = True)
+    timestamp =  DateTimeField(default=datetime.now)
+    remote_address = CharField(max_length = 64)
+
+    class Meta:
+            database = pg_db
+            db_table = "item_views" 
+
 class File(Model):
     item = ForeignKeyField(Item, null = True)
     revision = ForeignKeyField(ItemRevision, null = True)
