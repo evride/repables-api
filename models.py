@@ -72,6 +72,19 @@ class ItemRevision(Model):
         def __str__(self):
                 return self.name
 
+class ItemImage(Model):
+    revision_id = IntegerField()
+    path = CharField(max_length=255, default ="")
+    upload_id = IntegerField()
+    width = IntegerField()
+    height = IntegerField()
+    type = CharField(max_length=64, default ="")
+    class Meta:
+            database = pg_db
+            db_table = "item_images"
+    def __str__(self):
+            return self.type
+
 class ItemUpload(Model):
     uploader = ForeignKeyField(User, null=True)
     file_location = CharField(max_length=128)

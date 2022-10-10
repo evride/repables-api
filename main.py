@@ -15,7 +15,7 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from config import DATABASE
 from models import User, Item, ItemRevision, ItemUpload, PasswordReset, ItemView
-from utils import create_access_token, get_password_hash, verify_password, get_current_user, reset_password_key
+from utils import create_access_token, get_password_hash, verify_password, require_current_user, reset_password_key
 
 app = FastAPI()
 
@@ -102,6 +102,8 @@ async def read_item(item_id: int):
 
 @app.post("/items/{item_id}/view")
 async def track_item_view(item_id: int, request: Request):
+    # current_user: User = await get_current_user()
+    # print(current_user)
     item = Item.select().where(Item.id == item_id).get()
     if item:
         ItemView.create(item_id = item_id, revision_id = item.revision_id, remote_address = request.client.host)
@@ -121,12 +123,12 @@ async def my_endpoint(request: Request):
 
 
 @app.post("/item-revision")
-async def create_item(current_user: User = Depends(get_current_user)):
+async def create_item(current_user: User = Depends(require_current_user)):
     i = ItemRevision.create( user_id=current_user.id)
     return model_to_dict(i)
 
 @app.post("/item-revision/{item_revision_id}/publish")
-async def publish_item( item_revision_id: int, current_user: User = Depends(get_current_user)):
+async def publish_item( item_revision_id: int, current_user: User = Depends(require_current_user)):
     item_revision = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
     existing = Item.select().where(Item.user_id == current_user.id).where(Item.revision_id == item_revision_id).get()
     if (existing):
@@ -143,12 +145,12 @@ async def publish_item( item_revision_id: int, current_user: User = Depends(get_
 #     return model_to_dict(u)
 
 @app.delete("/item/{item_id}")
-async def delete_item(item_id: int, current_user: User = Depends(get_current_user)):
+async def delete_item(item_id: int, current_user: User = Depends(require_current_user)):
     i = Item.select().where(Item.id == item_id).where(User.id == user_id).get()
     return i.delete_instance()
 
 @app.post("/item-revision/{item_revision_id}")
-async def update_item(item_revision_id : int, item: ModifyItem, current_user: User = Depends(get_current_user)):
+async def update_item(item_revision_id : int, item: ModifyItem, current_user: User = Depends(require_current_user)):
     i = ItemRevision.select().where(ItemRevision.id == item_revision_id).where(ItemRevision.user_id == current_user.id).get()
     if(i):
         i.name = item.name
@@ -183,7 +185,7 @@ async def create_user(user: ModifyUser):
     return model_to_dict(u)
 
 @app.put("/user")
-async def update_user(user: ModifyProfile, current_user: User = Depends(get_current_user)):
+async def update_user(user: ModifyProfile, current_user: User = Depends(require_current_user)):
     u = User.select().where(User.id == current_user.id).get()
     if(u):
         u.fullname = user.fullname
@@ -196,11 +198,11 @@ async def update_user(user: ModifyProfile, current_user: User = Depends(get_curr
         return {'error' : 'Not Found'}
 
 @app.get("/me", response_model = MeResponse)
-async def read_current_user(current_user: User = Depends(get_current_user)):
+async def read_current_user(current_user: User = Depends(require_current_user)):
     return model_to_dict(current_user)
 
 @app.post("/file/{revision_id}")
-async def create_file(revision_id : str, file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+async def create_file(revision_id : str, file: UploadFile = File(...), current_user: User = Depends(require_current_user)):
     file_location = "uploaded_files/" + str(time.time())
     try:
         async with aiofiles.open(file_location, 'wb') as out_file:
