@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from jose import jwt, JWTError
 from models import User
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -59,5 +59,21 @@ async def require_current_user(token: str = Depends(oauth2_scheme)):
         raise credentials_exception
     return user
 
-
-# def get_current_user():
+async def get_current_user(request: Request):
+    try:
+        user = await require_current_user(request)
+    except HTTPException:
+        print("dude")
+        return {"id": -1}
+    user = User.select().where(User.id == token_data['id']).get()
+    return user
+async def get_current_user2(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        id: str = payload.get("id")
+        token_data = {'id' : id}
+    except JWTError:
+        print("dude")
+        return {"id": -1}
+    user = User.select().where(User.id == token_data['id']).get()
+    return user

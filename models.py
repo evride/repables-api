@@ -3,9 +3,6 @@ from datetime import datetime
 from config import DATABASE
 from playhouse.migrate import *
 
-# user = User.objects.create_user('john', 'lennon@thebeatles.com', 'johnpassword')
-# Create your models here.
-
 pg_db = PostgresqlDatabase(DATABASE['NAME'], user=DATABASE['USER'], password=DATABASE['PASSWORD'], host=DATABASE['HOST'], port=DATABASE['PORT'], autorollback=True)
 migrator = PostgresqlMigrator(pg_db)
 
