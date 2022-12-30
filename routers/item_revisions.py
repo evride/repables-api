@@ -6,13 +6,12 @@ import time
 from datetime import datetime
 
 from playhouse.shortcuts import *
-from pydantic import BaseModel
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
-from models import Item, User, Item, ItemRevision, ItemUpload, PasswordReset, ItemView
-from utils import create_access_token, get_password_hash, verify_password, require_current_user, get_current_user, reset_password_key
-from requests import Login, ModifyUser, ResetKey, ResetPasswordCreds, UserResponse, MeResponse, ModifyItem, ModifyProfile, RevisionUpload
-
+from models import Item, User, Item, ItemRevision, ItemUpload
+from utils import create_access_token, require_current_user, get_current_user
+from requests import ModifyItem, RevisionUpload
+from responses import ItemResponse
 
 router = APIRouter()
 
