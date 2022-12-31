@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
@@ -32,3 +32,7 @@ class ModifyProfile(BaseModel):
 
 class RevisionUpload(BaseModel):
     item_revision_id: int
+
+class PageRequest(BaseModel):
+    limit: Optional[int] = Field(20, gt=0, le=100)
+    offset: Optional[int] = Field(0, gt=0)
