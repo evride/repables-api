@@ -14,8 +14,8 @@ from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from models import Item, User, Item, ItemRevision, ItemUpload, ItemView
 from utils import require_current_user, get_current_user
-from requests import ModifyItem, RevisionUpload
-from responses import ItemResponse
+from requests import ModifyItem, RevisionUpload, PageRequest
+from responses import PaginatedItemsResponse
 router = APIRouter()
 
 
@@ -42,9 +42,11 @@ async def track_item_view(item_id: int, request: Request):
         return {'success' : 'true'}
     return {'error' : 'Not Found'}
 
-@router.get("/items", response_model = List[ItemResponse], tags=["items"])
-async def read_items():
-    items = Item.select()
+@router.get("/items", response_model = PaginatedItemsResponse, tags=["items"])
+async def read_items(offset:int = 0, limit: int = 20):
+    limit = min(max(limit, 1), 100)    
+    itemCount = Item.select().count()
+    items = Item.select().limit(limit).offset(offset)
     items = [model_to_dict(item) for item in items]
     images = {
         'small': {'url': 'images/item.jpg', 'width': 310, 'height':180},
@@ -52,7 +54,7 @@ async def read_items():
     }
     for item in items:
         item['previewImage'] = images
-    return items
+    return { 'offset': offset, 'limit': limit, 'count': itemCount, 'results': items }
 
 @router.delete("/item/{item_id}")
 async def delete_item(item_id: int, current_user: User = Depends(require_current_user)):

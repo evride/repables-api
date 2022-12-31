@@ -44,3 +44,15 @@ class ItemResponse(BaseModel):
     previewImage: Optional[ImageSizes]
     images: Optional[List[ImageSizes]]
     user: Optional[BaseUserResponse]
+
+class PaginatedItemsResponse(BaseModel):
+    offset: int
+    limit: int
+    count: Optional[int]
+    results: List[ItemResponse]
+
+class PaginatedUsersResponse(BaseModel):
+    offset: int
+    limit: int
+    count: Optional[int]
+    results: List[UserResponse]
