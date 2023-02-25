@@ -50,6 +50,8 @@ class PaginatedItemsResponse(BaseModel):
     limit: int
     count: Optional[int]
     results: List[ItemResponse]
+class PaginatedSearchResponse(PaginatedItemsResponse):
+    q: str
 
 class PaginatedUsersResponse(BaseModel):
     offset: int
