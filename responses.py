@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 class BaseUserResponse(BaseModel):
@@ -9,7 +9,7 @@ class BaseUserResponse(BaseModel):
 
 class UserResponse(BaseUserResponse):
     biography: Optional[str]
-    birthdate: Optional[str]
+    birthdate: Optional[date]
     company: Optional[str]
     created_at: datetime
     email: Optional[str]
