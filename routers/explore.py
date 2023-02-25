@@ -5,7 +5,8 @@ from playhouse.shortcuts import *
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from models import Item
-from utils import require_current_user, get_current_user
+
+from auth import require_current_user, get_current_user
 from responses import PaginatedSearchResponse
 
 router = APIRouter()

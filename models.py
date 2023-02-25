@@ -44,6 +44,9 @@ class Item(Model):
     deleted_at = DateTimeField(null=True)
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
+    item_likes = IntegerField(default=0)
+    item_dislikes = IntegerField(default=0)
+    item_views = IntegerField(default=0)
     class Meta:
         database = pg_db
         db_table = "items"
@@ -59,6 +62,7 @@ class ItemRevision(Model):
     tags = TextField(null=True, default="")
     license = CharField(max_length=10, default="") #Enum
     version = CharField(max_length=50, default="")
+    upload_session_id = IntegerField(null=True)
     deleted_at = DateTimeField(null=True)
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
@@ -81,6 +85,19 @@ class ItemImage(Model):
     def __str__(self):
         return self.type
 
+class ItemLike(Model):
+    item = ForeignKeyField(Item)
+    user = ForeignKeyField(User)
+    score = IntegerField()
+    remote_address = CharField(max_length = 64)
+
+    class Meta:
+        database = pg_db
+        db_table = "item_likes"
+    def __str__(self):
+        return self.type
+
+
 class ItemUpload(Model):
     uploader = ForeignKeyField(User, null=True)
     file_location = CharField(max_length=128)
@@ -88,7 +105,8 @@ class ItemUpload(Model):
     file_extension = CharField(max_length=16, null=True) #adding the nullable for testing
     size = IntegerField()#filesize Number (file size in number of bytes)
     mimetype = CharField(max_length=64)#mimetype  varchar(64) NULLABLE (ex: image/png)
-    revision_id = ForeignKeyField(ItemRevision)
+    upload_session_id = IntegerField(null=True)
+    revision = ForeignKeyField(ItemRevision, null=True)
 	#type varchar(1) NULLABLE (either "primary", "secondary") //define it but mostly ignore for now
 	#hash String(40) NULLABLE (file hash, md5 ) //define but can ignore for now
 	#enabled Boolean
@@ -97,6 +115,11 @@ class ItemUpload(Model):
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
 	#remote_address varchar(39)id #adding the nullable for testing
+    @classmethod
+    def disable_relationships(self):
+        ItemUpload.uploader = IntegerField()
+        ItemUpload.revision_id = IntegerField()
+        return ItemUpload
     class Meta:
         database = pg_db
         db_table = "item_uploads"
@@ -105,7 +128,7 @@ class ItemUpload(Model):
 
 class ItemView(Model):
     item = ForeignKeyField(Item)
-    revision = ForeignKeyField(ItemRevision)
+    revision = ForeignKeyField(ItemRevision, null=True)
     user = ForeignKeyField(User, null = True)
     timestamp =  DateTimeField(default=datetime.now)
     remote_address = CharField(max_length = 64)
@@ -145,18 +168,3 @@ class PasswordReset(Model):
     class Meta:
         database = pg_db
         db_table = "reset_passwords"
-
-class Upload(Model):
-    user = ForeignKeyField(User)
-    revision = ForeignKeyField(ItemRevision, null=True)
-    file_location = CharField(max_length=256)
-    filename = CharField(max_length=256)
-    file_extension = CharField(max_length=10)
-    filesize = IntegerField()
-    mimetype = CharField(max_length=128)
-    hash = CharField(max_length=256)
-    remote_address = CharField(max_length=39)
-    uploaded_at = DateTimeField(default=datetime.now)
-    class Meta:
-        database = pg_db
-        db_table = "uploads"
