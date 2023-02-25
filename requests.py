@@ -14,6 +14,9 @@ class ModifyUser(BaseModel):
 class ResetKey(BaseModel):
     reset_key: str
 
+class LikePost(BaseModel):
+    score: int
+
 class ResetPasswordCreds(BaseModel):
     email: str
 

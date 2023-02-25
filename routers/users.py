@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 
 from models import Item, User, Item, ItemRevision, ItemUpload, PasswordReset, ItemView
-from utils import create_access_token, get_password_hash, verify_password, require_current_user, get_current_user, reset_password_key
+from auth import create_access_token, get_password_hash, verify_password, require_current_user, get_current_user, reset_password_key, is_legacy_password
 from requests import Login, ModifyUser, ResetKey, ResetPasswordCreds, ModifyItem, ModifyProfile, RevisionUpload
 from responses import UserResponse, MeResponse
 
@@ -75,18 +75,19 @@ async def delete_user(user_id : int):
 
 @router.post('/login', tags=["users"])
 async def login_user(creds: Login):
-    print(creds)
     u = User.select().where(User.username == creds.username_or_email).get()
-    user = model_to_dict(u)
     if not user:
         return { 'error': 'Username or email does not exist.' }
-    if not await verify_password(creds.password, user['password']):
+    if not verify_password(creds.password, user.password):
         return { 'error': 'Password is incorrect.' }
     if user['id'] >= 1:
-        token_data = {'id': user['id']}
-        token = await create_access_token(token_data);
+        if is_legacy_password(u.password):
+            u.password = get_password_hash(creds.password)
+            u.save()
+        token_data = {'id': user.id}
+        token = create_access_token(token_data);
 
-        return {'token': token, 'id': user['id'], 'username': user['username']}
+        return {'token': token, 'id': user.id, 'username': user.username}
     else:
         return {'error': 'Username or password is incorrect.'}
 
