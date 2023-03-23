@@ -16,6 +16,8 @@ async def search(q:str = "", offset:int = 0, limit: int = 20):
     query = "%" + q + "%"
     limit = min(max(limit, 1), 100)    
     itemCount = Item.select().where(
+        Item.revision_id > 1
+    ).where(
         (Item.name ** query)
     ).count()
     items = Item.select().where(
@@ -42,4 +44,4 @@ async def search(q:str = "", offset:int = 0, limit: int = 20):
                 'small': {'url': 'images/gallery/f63f65b503e22cb970527f23c9ad7db1_1aa8564e5646169a4f7b792efff84641_thumb.jpg', 'width': 110, 'height':64},
                 'large': {'url': 'images/gallery/f63f65b503e22cb970527f23c9ad7db1_1aa8564e5646169a4f7b792efff84641.jpg', 'width': 620, 'height':360}
             }
-    return { 'q': q, 'offset': offset, 'limit': limit, 'count': itemCount, 'results': items }
+    return { 'q': q, 'offset': offset, 'limit': limit, 'count': itemCount, 'results': items }.dict(exclude_none=True)

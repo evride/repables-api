@@ -15,7 +15,7 @@ class User(Model):
     company = CharField(max_length = 128, null=True)
     biography = TextField(null=True)
     website = TextField(null=True)
-    birthdate = DateTimeField(null=True)
+    birthdate = DateField(null=True)
     email_public = BooleanField(default=False)
     display_birthday = BooleanField(default=False)
     hide_inappropriate = BooleanField(default=True)
@@ -33,7 +33,8 @@ class User(Model):
 
 class Item(Model):
     user = ForeignKeyField(User)
-    revision_id = IntegerField(default=1)
+    revision_id = IntegerField(null=True)
+    upload_session_id = IntegerField(null=True)
     name = CharField(max_length=255)
     description = TextField(null=True)
     instructions = TextField(null=True)
@@ -47,6 +48,7 @@ class Item(Model):
     item_likes = IntegerField(default=0)
     item_dislikes = IntegerField(default=0)
     item_views = IntegerField(default=0)
+    
     class Meta:
         database = pg_db
         db_table = "items"
@@ -54,7 +56,7 @@ class Item(Model):
             return self.name
 
 class ItemRevision(Model):
-    item = ForeignKeyField(Item, null=True)
+    item = ForeignKeyField(Item, null=True, backref="item_revisions")
     user = ForeignKeyField(User)
     name = CharField(max_length=255, default="")
     description = TextField(null=True, default="")
@@ -66,24 +68,45 @@ class ItemRevision(Model):
     deleted_at = DateTimeField(null=True)
     created_at = DateTimeField(default=datetime.now)
     updated_at = DateTimeField(default=datetime.now)
+    @classmethod
+    def disable_relationships(self):
+        ItemRevision.item = IntegerField()
+        ItemRevision.user = IntegerField()
+        return ItemRevision
+    @classmethod
+    def enable_relationships(self):
+        item = ForeignKeyField(Item, null=True, backref="item_revisions")
+        user = ForeignKeyField(User)
+        return ItemRevision
     class Meta:
         database = pg_db
         db_table = "item_revisions"
     def __str__(self):
         return self.name
 
+
 class ItemImage(Model):
-    revision_id = IntegerField()
+    revision = ForeignKeyField(ItemRevision, null=True, backref="item_images")
     path = CharField(max_length=255, default ="")
     upload_id = IntegerField()
     width = IntegerField()
     height = IntegerField()
     type = CharField(max_length=64, default ="")
+    @classmethod
+    def disable_relationships(self):
+        ItemImage.revision = IntegerField()
+        return ItemImage
+    @classmethod
+    def enable_relationships(self):
+        revision = ForeignKeyField(ItemRevision, null=True, backref="item_images")
+        return ItemImage
     class Meta:
         database = pg_db
         db_table = "item_images"
     def __str__(self):
         return self.type
+
+
 
 class ItemLike(Model):
     item = ForeignKeyField(Item)
@@ -118,7 +141,12 @@ class ItemUpload(Model):
     @classmethod
     def disable_relationships(self):
         ItemUpload.uploader = IntegerField()
-        ItemUpload.revision_id = IntegerField()
+        ItemUpload.revision = IntegerField()
+        return ItemUpload
+    @classmethod
+    def enable_relationships(self):
+        uploader = ForeignKeyField(User, null=True)
+        revision = ForeignKeyField(ItemRevision, null=True)
         return ItemUpload
     class Meta:
         database = pg_db
