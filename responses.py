@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 class BaseUserResponse(BaseModel):
@@ -9,7 +9,7 @@ class BaseUserResponse(BaseModel):
 
 class UserResponse(BaseUserResponse):
     biography: Optional[str]
-    birthdate: Optional[str]
+    birthdate: Optional[date]
     company: Optional[str]
     created_at: datetime
     email: Optional[str]
@@ -22,15 +22,31 @@ class MeResponse(UserResponse):
     email_public: bool
     hide_inappropriate: bool
 
-class Image(BaseModel):
+class ImageSize(BaseModel):
     url: str
     width: int
     height: int
 
 class ImageSizes(BaseModel):
-    small: Image
-    large: Image
+    is_3dmodel: Optional[bool]
+    upload_id: Optional[int]
+    thumbnail: ImageSize
+    small: ImageSize
+    medium: ImageSize
+    large: ImageSize
 
+class ItemRevisionResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    instructions: str
+    tags: Optional[str]
+    license: str
+    version: str
+    flagged_at: Optional[datetime]
+    previewImage: Optional[ImageSizes]
+    images: Optional[List[ImageSizes]]
+    
 class ItemResponse(BaseModel):
     id: int
     revision_id: int
@@ -44,12 +60,16 @@ class ItemResponse(BaseModel):
     previewImage: Optional[ImageSizes]
     images: Optional[List[ImageSizes]]
     user: Optional[BaseUserResponse]
+    item_revision: Optional[ItemRevisionResponse]
+    item_revisions: Optional[List[ItemRevisionResponse]]
+
 
 class PaginatedItemsResponse(BaseModel):
     offset: int
     limit: int
     count: Optional[int]
     results: List[ItemResponse]
+    dude: Optional[int]
 class PaginatedSearchResponse(PaginatedItemsResponse):
     q: str
 

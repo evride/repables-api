@@ -16,7 +16,7 @@ chrome_options.add_argument("--headless")
 
 def render_model(filename: str, fileType: str):
     url = "http://render-model/?file=files/" + filename + "&type=" + fileType
-    filenameBase = str(int(time.time() * 1000))
+    filenameBase = "images/" + str(int(time.time() * 1000))
     rendered_files = [
         { "filename": filenameBase + '_large.png', "width":1440, "height":1080, "type": "large"},
         { "filename": filenameBase + '_medium.png', "width":1280, "height":960, "type": "medium"},
@@ -31,8 +31,8 @@ def render_model(filename: str, fileType: str):
     for render in rendered_files:
         driver.set_window_size(render["width"], render["height"])
         time.sleep(0.5)
-        driver.save_screenshot("images/" + render['filename'])
-        saveS3File("images/" + render['filename'], "images/" + render['filename'])
-        Path("images/" + render['filename']).unlink()
+        driver.save_screenshot(render['filename'])
+        saveS3File(render['filename'], render['filename'])
+        Path(render['filename']).unlink()
     driver.close()
     return rendered_files
